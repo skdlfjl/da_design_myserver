@@ -32,13 +32,27 @@
 
 #### How to install
 
+* Clone & Install
+
 ```sh
 
-git clone ...........
+~# git clone ...........
 
-cd da_design_myserver
+~# cd da_design_myserver
 
-pip3 install -r requirements.txt
+~/da_design_myserver# pip3 install -r requirements.txt
+
+```
+
+* Append two lines below to `~/.bashrc` file.
+
+```sh
+~# cat >> ~/.bashrc
+export DA_DESING_SERVER=/root/da_design_myserver
+export PYTHONPATH=$PYTHONPATH:$DA_DESING_SERVER
+Ctrl+d
+
+~# source ~/.bashrc
 
 ```
 
