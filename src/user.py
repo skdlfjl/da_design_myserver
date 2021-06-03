@@ -1,7 +1,22 @@
-import pdb
 import hashlib
 import datetime
+import pymongo
+from pymongo import MongoClient
 from bson.timestamp import Timestamp
+import os
+from src import myconfig
+import pdb
+
+project_root_path = os.getenv("DA_DESIGN_SERVER")
+cfg = myconfig.get_config('{}/share/project.config'.format(project_root_path))
+db_ip = cfg['db']['ip']
+db_port = int(cfg['db']['port'])
+db_name = cfg['db']['name']
+
+db_client = MongoClient(db_ip, db_port)
+db = db_client[db_name]
+
+col_user = db[cfg['db']['col_user']]
 
 def convert_to_SHA256(x):
     """Convert a given string to SHA256-encoded string.
@@ -26,11 +41,9 @@ def convert_to_bson_timestamp(ts):
     lowpart = int(ts)
     return Timestamp(lowpart, 1)
 
-def check_passwd(col_user, userid, passwd):
+def check_passwd(userid, passwd):
     """Check if the password is correct or not.
 
-    :param col_user: Database collection of user.
-    :type col_user: collection
     :param userid: user ID
     :type userid: str
     :param passwd: password
@@ -48,13 +61,11 @@ def check_passwd(col_user, userid, passwd):
         return False
     return the_user
 
-def generate_session(doc_user, col_user):
+def generate_session(doc_user):
     """Generate session key.
 
     :param doc_user: user's document (DB)
     :type doc_user: dict
-    :param col_user: user's collection (DB)
-    :type col_user: pymongo.collection.Collection
     :return: session key dictionary
     :rtype: dict
     """
@@ -76,11 +87,9 @@ def generate_session(doc_user, col_user):
     col_user.find_one_and_replace({"user_id": doc_user["user_id"]}, doc_user)
     return doc_user["session_key"]
 
-def check_session(col_user, session_id, timestamp, elapse_limit=60):
+def check_session(session_id, timestamp, elapse_limit=60):
     """Check if the session is valid.
 
-    :param col_user: user's collection (DB)
-    :type col_user: pymongo.collection.Collection
     :param session_id: session ID
     :type session_id: str
     :param timestamp: timestamp (usually, this is current timestamp)
@@ -102,3 +111,26 @@ def check_session(col_user, session_id, timestamp, elapse_limit=60):
         return False
     return the_user
 
+def login(user_id, passwd, logger):
+    """Login.
+
+    :param user_id: user ID
+    :type user_id: str
+    :param passwd: password
+    :type passwd: str
+    :param logger: Logger instance
+    :type logger: logging.Logger
+    :return: session_key or False
+    :rtype: dict or bool
+    """
+    doc_user = check_passwd(user_id, passwd)
+    if not doc_user:
+        logger.info("Invalid user ID or password")
+        return False
+
+    session_key = generate_session(doc_user)
+    if not session_key:
+        logger.error("Failed to generate session of user {}".format(user_id))
+        return False
+
+    return session_key
