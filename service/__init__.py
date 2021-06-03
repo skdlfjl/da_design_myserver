@@ -15,6 +15,13 @@ logger = mylogger.get_logger('login', log_directory)
 
 @app.route('/login', methods=["POST"])
 def login():
+    """login API function.
+
+    Specification can be found in `API.md` file.
+
+    :return: JSON serialzed string containing the login result with session_id
+    :rtype: str
+    """
     user_id = request.json.get('user_id')
     passwd = request.json.get('passwd')
     logger.info('{}: login'.format(user_id))
