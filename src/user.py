@@ -17,6 +17,8 @@ db_client = MongoClient(db_ip, db_port)
 db = db_client[db_name]
 
 col_user = db[cfg['db']['col_user']]
+col_schedule = db[cfg['db']['col_schedule']]
+col_main = db[cfg['db']['col_main']]
 
 def convert_to_SHA256(x):
     """Convert a given string to SHA256-encoded string.
@@ -134,3 +136,47 @@ def login(user_id, passwd, logger):
         return False
 
     return session_key
+
+
+def add_main(doc_user, mains, logger, main_limit=10):
+    """add one or more favorite company to the user's list.
+
+    :param doc_user: user document (DB)
+    :type doc_user:
+    :param favorites: favorite company list to add
+    :type favoriates: list
+    :param favorite_limit: maximum number of favorite companies for a user
+    :type favorite_limit: int
+    :return: the number of added items
+    :rtype: int
+    """
+    my_mains = col_main.find_one({"User": doc_user["_id"]})
+    if my_mains == None:
+        logger.info('{}: a main(schedule) list created'.format(
+            doc_user["user_id"]))
+        my_mains = {"User": doc_user["_id"],
+            "Schedule": []}
+        col_main.insert_one(my_mains)
+    if len(my_mains["Schedule"]) >= main_limit:
+        logger.info('{}: main(schedule) list is already full'.format(
+            doc_user["user_id"]))
+        return 0
+
+    ret = 0
+    for m in mains:
+        doc_schedule = col_schedule.find_one({"title": m})
+        if not doc_schedule:
+            continue
+        if doc_schedule["_id"] in my_mains["Schedule"]:
+            continue
+        my_mains["Schedule"] += [doc_schedule["_id"]]
+        logger.info('{}: {} added into main list'.format(
+            doc_user["user_id"], m))
+        ret += 1
+
+    if ret >= 1:
+        col_main.find_one_and_replace({"User": doc_user["_id"]}, my_mains)
+
+    return ret
+
+
