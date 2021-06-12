@@ -1,10 +1,8 @@
-# Jenkins test2  
-print("hello")
 """Just for practicing Sphinx"""
 
 class adam:
     """연습용 클래스"""
-    def __init__(self):
+    def __init__(self ):
         """생성자 함수"""
         print('생성')
 
@@ -14,6 +12,7 @@ class adam:
 
     def get_biggest(self, x):
         """Return the biggest value
+        
         :param x: list of int
         :type x: list
         :return: The biggest int value
@@ -24,6 +23,7 @@ class adam:
             if x[i] > ret:
                 ret = x[i]
         return ret
+
 
 a = adam()
 print('sum_two() result = ', a.sum_two(1, 3))
