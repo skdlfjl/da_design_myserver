@@ -18,6 +18,7 @@ db = db_client[db_name]
 
 col_user = db[cfg['db']['col_user']]
 col_schedule = db[cfg['db']['col_schedule']]
+col_recipe = db[cfg['db']['col_recipe']]
 col_main = db[cfg['db']['col_main']]
 
 def convert_to_SHA256(x):
@@ -138,18 +139,7 @@ def login(user_id, passwd, logger):
     return session_key
 
 
-def add_main(doc_user, mains, logger, main_limit=10):
-    """add one or more favorite company to the user's list.
-
-    :param doc_user: user document (DB)
-    :type doc_user:
-    :param favorites: favorite company list to add
-    :type favoriates: list
-    :param favorite_limit: maximum number of favorite companies for a user
-    :type favorite_limit: int
-    :return: the number of added items
-    :rtype: int
-    """
+def add_schedule(doc_user, mains, logger, main_limit=10):
     my_mains = col_main.find_one({"User": doc_user["_id"]})
     if my_mains == None:
         logger.info('{}: a main(schedule) list created'.format(
@@ -179,4 +169,35 @@ def add_main(doc_user, mains, logger, main_limit=10):
 
     return ret
 
+
+
+def add_recipe(doc_user, mains, logger, main_limit=10):
+    my_mains = col_main.find_one({"User": doc_user["_id"]})
+    if my_mains == None:
+        logger.info('{}: a main(recipe) list created'.format(
+            doc_user["user_id"]))
+        my_mains = {"User": doc_user["_id"],
+            "Recipe": []}
+        col_main.insert_one(my_mains)
+    if len(my_mains["Recipe"]) >= main_limit:
+        logger.info('{}: main(recipe) list is already full'.format(
+            doc_user["user_id"]))
+        return 0
+
+    ret = 0
+    for m in mains:
+        doc_recipe = col_recipe.find_one({"name": m})
+        if not doc_recipe:
+            continue
+        if doc_recipe["_id"] in my_mains["Recipe"]:
+            continue
+        my_mains["Recipe"] += [doc_schedule["_id"]]
+        logger.info('{}: {} added into main list'.format(
+            doc_user["user_id"], m))
+        ret += 1
+
+    if ret >= 1:
+        col_main.find_one_and_replace({"User": doc_user["_id"]}, my_mains)
+
+    return ret
 

@@ -14,7 +14,9 @@ cfg = myconfig.get_config('{}/share/project.config'.format(
 log_directory = cfg['logger'].get('log_directory')
 loggers = dict()
 loggers['login'] = mylogger.get_logger('login', log_directory)
-loggers['main'] = mylogger.get_logger('main', log_directory)
+loggers['schedule'] = mylogger.get_logger('schedule', log_directory)
+loggers['recipe'] = mylogger.get_logger('recipe', log_directory)
+
 
 @app.route('/login', methods=["POST"])
 def login():
@@ -25,6 +27,8 @@ def login():
     :return: JSON serialzed string containing the login result with session_id
     :rtype: str
     """
+    #pdb.set_trace()
+
     user_id = request.json.get('user_id')
     passwd = request.json.get('passwd')
     loggers['login'].info('{}: login'.format(user_id))
@@ -64,7 +68,7 @@ def main():
     ret = {"result": None,
         "msg": ""}
 
-    if request_type == 'add':
+    if request_type == 'schedule_add' or request_type == 'recipe_add':
         what_time_is_it = datetime.datetime.now()
         doc_user = user.check_session(session_id,
                 what_time_is_it.timestamp())
@@ -74,13 +78,18 @@ def main():
             ret['result'] = False
             ret['msg'] = msg
         else:
-            main = request.json.get('main')
-            how_many_added = user.add_main(doc_user,
-                    main, loggers['main'])
+            if request_type == 'schedule_add':
+                main = request.json.get('main_schedule')
+                how_many_added = user.add_schedule(doc_user, main, loggers['main_schedule'])
+            elif request_type ==  'recipe_add':
+                main = request.json.get('main_recipe')
+                how_many_added = user.add_recipe(doc_user, main, loggers['main_recipe'])
+
+
             new_session = user.generate_session(doc_user)
             if how_many_added:
                 msg = '{}: {} main items added'.format(
-                    session_id, how_many_added)
+                        session_id, how_many_added)
                 ret['result'] = True
             else:
                 msg = '{}: No main items added'.format(
