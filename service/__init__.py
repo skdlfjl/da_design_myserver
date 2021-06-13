@@ -1,3 +1,4 @@
+  
 from flask import Flask
 from flask import request
 import os
@@ -21,9 +22,7 @@ loggers['recipe'] = mylogger.get_logger('recipe', log_directory)
 @app.route('/login', methods=["POST"])
 def login():
     """login API function.
-
     Specification can be found in `API.md` file.
-
     :return: JSON serialzed string containing the login result with session_id
     :rtype: str
     """
@@ -54,9 +53,7 @@ def login():
 @app.route('/main', methods=["POST"])
 def main():
     """main (schedule) API function.
-
     Specification can be found in `API.md` file.
-
     :return: JSON serialized string containing the result with session_id
     :rtype: str
     """
@@ -109,4 +106,3 @@ def main():
     loggers['main'].info('{}: main result = {}'.format(
         session_id, ret))
     return ret
-
